@@ -1,6 +1,6 @@
 name: Update APK Data
 on:
-  schedule:
+  schedule: 
     - cron: '0 * * * *' # 每小时自动更新一次
   workflow_dispatch:      # 允许手动运行
   release:
