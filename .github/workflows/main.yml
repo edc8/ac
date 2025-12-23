@@ -1,0 +1,17 @@
+name: CI/CD  # 工作流名称
+
+on:
+  push:
+    branches: [ "main" ]  # 当 main 分支有代码推送时触发
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:      # 允许你在 Actions 页面手动点击运行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 环境运行
+    steps:
+      - uses: actions/checkout@v4  # 拉取你的代码
+      
+      - name: Run a script
+        run: echo "GitHub Actions 已成功开启！"
