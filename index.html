@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
+    <title>APK 下载目录</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+        body { background-color: #f9f9f9; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #fff; color: #000; padding: 20px 0; border-radius: 8px 8px 0 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #eee; }
+        .header-content { display: flex; align-items: center; padding: 0 30px; }
+        .logo { display: flex; align-items: center; gap: 15px; }
+        .logo i { font-size: 2.2rem; color: #333; }
+        .logo h1 { font-size: 1.8rem; font-weight: 600; }
+        .path-bar { background-color: #fff; color: #555; padding: 12px 20px; margin: 15px 30px; border-radius: 6px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border:1px solid #eee; }
+        .path-bar i { margin-right: 10px; color: #555; }
+        .main-content { background-color: #fff; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; min-height: 300px; }
+        .toolbar { display: flex; justify-content: flex-end; padding: 15px 30px; background-color: #fafafa; border-bottom: 1px solid #eee; }
+        .search-box { display: flex; align-items: center; background-color: #fff; border-radius: 6px; padding: 5px 15px; border: 1px solid #eee; }
+        .search-box input { border: none; outline: none; padding: 8px; width: 200px; }
+        .file-list { padding: 0; }
+        .list-header { display: grid; grid-template-columns: 40px 3fr 1fr 1fr 150px; padding: 15px 30px; background-color: #fafafa; font-weight: 600; color: #555; border-bottom: 1px solid #eee; }
+        .file-item { display: grid; grid-template-columns: 40px 3fr 1fr 1fr 150px; padding: 15px 30px; border-bottom: 1px solid #f5f5f5; align-items: center; transition: background-color 0.2s; }
+        .file-item:hover { background-color: #fafafa; }
+        .file-icon { font-size: 1.3rem; color: #444; }
+        .file-name { color: #000; text-decoration:none; font-weight: 500; }
+        .file-name:hover { text-decoration:underline; }
+        .file-size, .file-time { color: #666; font-size: 0.9rem; }
+        .file-op a { color: #007bff; font-weight: 600; text-decoration:none; }
+        .file-op a:hover { text-decoration:underline; }
+        .loading { padding: 40px; text-align: center; color: #888; }
+        @media (max-width:768px){
+            .list-header, .file-item { grid-template-columns: 40px 2fr 1fr 80px; }
+            .hide-mob { display:none; }
+            .header-content { padding:0 15px; }
+            .path-bar { margin:15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fab fa-android"></i>
+                    <h1>APK 下载目录</h1>
+                </div>
+            </div>
+            <div class="path-bar">
+                <i class="fas fa-tag"></i>
+                <span id="release-tag">正在检查版本...</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="搜索 APK...">
+                </div>
+            </div>
+
+            <div class="file-list">
+                <div class="list-header">
+                    <div>图标</div>
+                    <div>文件名</div>
+                    <div class="hide-mob">大小</div>
+                    <div class="hide-mob">日期</div>
+                    <div>操作</div>
+                </div>
+                <div id="file-container">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> 正在连接服务器...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * 已为你配置好仓库地址：edc8/ac
+ */
+const CONFIG = {
+    username: 'edc8', 
+    repo: 'ac'
+};
+
+async function fetchReleases() {
+    const container = document.getElementById('file-container');
+    const tagDisplay = document.getElementById('release-tag');
+
+    try {
+        const response = await fetch(`https://api.github.com/repos/${CONFIG.username}/${CONFIG.repo}/releases/latest`);
+        
+        if (!response.ok) {
+            if(response.status === 404) throw new Error('未发现 Release。请先在 GitHub 仓库发布一个 Release 并上传 APK。');
+            throw new Error('API 访问受限或网络错误');
+        }
+        
+        const data = await response.json();
+        tagDisplay.innerText = `最新版本: ${data.tag_name}`;
+        container.innerHTML = '';
+
+        if (data.assets.length === 0) {
+            container.innerHTML = '<div class="loading">该版本中没有可下载的 APK 附件。</div>';
+            return;
+        }
+
+        data.assets.forEach(asset => {
+            const size = (asset.size / (1024 * 1024)).toFixed(2) + ' MB';
+            const time = asset.updated_at.substring(0, 10);
+
+            const itemHtml = `
+                <div class="file-item apk-file">
+                    <div class="file-icon"><i class="fas fa-mobile-screen-button"></i></div>
+                    <div>
+                        <a href="${asset.browser_download_url}" class="file-name">${asset.name}</a>
+                    </div>
+                    <div class="file-size hide-mob">${size}</div>
+                    <div class="file-time hide-mob">${time}</div>
+                    <div class="file-op">
+                        <a href="${asset.browser_download_url}" target="_blank">下载</a>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', itemHtml);
+        });
+
+    } catch (error) {
+        container.innerHTML = `<div class="loading" style="color:#e74c3c;">提示: ${error.message}</div>`;
+        tagDisplay.innerText = "获取失败";
+    }
+}
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    let keyword = e.target.value.toLowerCase().trim();
+    let fileItems = document.querySelectorAll('.file-item');
+    fileItems.forEach(item => {
+        let fileName = item.querySelector('.file-name').textContent.toLowerCase();
+        item.style.display = fileName.includes(keyword) ? 'grid' : 'none';
+    });
+});
+
+fetchReleases();
+</script>
+</body>
+</html>
