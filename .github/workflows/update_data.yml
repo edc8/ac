@@ -1,0 +1,41 @@
+name: Update APK Data
+
+on:
+  schedule:
+    - cron: '0 * * * *' # 每小时自动更新一次
+  workflow_dispatch:      # 允许手动点击运行 (非常重要！)
+  release:
+    types: [published]    # 当你发布新 Release 时自动运行
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    # 必须显式声明写权限
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Fetch Latest Release
+        run: |
+          # 增加 User-Agent 确保请求成功
+          curl -H "Accept: application/vnd.github.v3+json" \
+               -H "User-Agent: GitHub-Actions" \
+               -s https://api.github.com/repos/${{ github.repository }}/releases/latest > data.json
+          
+          # 检查文件是否抓取成功
+          if [ ! -s data.json ]; then
+            echo "错误：未能获取到 Release 数据，请检查仓库是否有已发布的 Release"
+            exit 1
+          fi
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          # 如果文件没有变化则跳过，防止报错
+          git commit -m "自动更新发布数据 (via Actions)" || exit 0
+          git push
