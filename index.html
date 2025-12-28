@@ -3,113 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>hex 小站 - Matrix Love</title>
+    <title>hex 小站 - Matrix Terminal</title>
     <link rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* 基础重置 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
             background-color: #000; 
-            color: #eee; 
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            color: #2ecc71; 
+            font-family: "Courier New", Courier, monospace; 
             line-height: 1.5; 
             overflow-x: hidden;
-            overflow-y: auto;
+            min-height: 100vh;
         }
 
-        /* 画布定位 */
+        /* 矩阵背景 */
         #matrix-canvas {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; /* 必须在最底层 */
         }
 
+        /* 内容容器 */
         .container { 
             position: relative;
-            max-width: 800px; 
+            max-width: 900px; 
             margin: 0 auto; 
-            padding: 12px; 
-            z-index: 10; /* 确保在画布之上 */
-            pointer-events: none; /* 让点击穿透容器，除非点击的是按钮 */
+            padding: 30px 15px; 
+            z-index: 10;
+            /* 关键：允许点击事件穿透到 body，但保留子元素的交互 */
+            pointer-events: none; 
         }
 
-        /* 恢复容器内的点击事件 */
-        header, .main-content, a { pointer-events: auto; }
-
-        header { 
-            background: rgba(10, 10, 10, 0.85); 
-            backdrop-filter: blur(10px);
-            padding: 20px; 
-            border-radius: 12px 12px 0 0; 
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            text-align: center; 
+        header, .main-content, .file-item, a, button { 
+            pointer-events: auto; /* 恢复子元素的交互能力 */
         }
 
-        .logo i { font-size: 2rem; color: #2ecc71; margin-bottom: 8px; text-shadow: 0 0 10px #2ecc71; }
-        .logo h1 { font-size: 1.5rem; font-weight: 700; color: #2ecc71; margin-bottom: 5px; }
-        .site-stats { font-size: 0.75rem; color: #aaa; display: flex; justify-content: center; gap: 15px; }
-        .val { color: #e67e22; font-weight: 600; }
-        .speed-val { color: #2ecc71; font-weight: 600; }
-
-        .main-content { 
-            background: rgba(10, 10, 10, 0.9); 
-            backdrop-filter: blur(10px);
-            border-radius: 0 0 12px 12px; 
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            border-top: none;
-            overflow: hidden; 
-        }
+        header { background: transparent; margin-bottom: 40px; text-align: left; }
+        .logo i { font-size: 2.5rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
+        .logo h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 10px 0; text-shadow: 0 0 10px #2ecc71; }
+        .site-stats { font-size: 0.85rem; color: #2ecc71; display: flex; gap: 20px; opacity: 0.8; }
+        .val { color: #fff; }
 
         .list-header { 
             display: grid; 
-            grid-template-columns: 40px 1fr 80px 80px 140px; 
-            padding: 12px 20px; 
-            background-color: rgba(46, 204, 113, 0.1); 
-            font-weight: 600; 
-            color: #2ecc71; 
-            font-size: 0.85rem; 
+            grid-template-columns: 50px 1fr 100px 120px; 
+            padding: 10px 0; 
+            color: rgba(46, 204, 113, 0.5); 
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(46, 204, 113, 0.3);
         }
 
         .file-item { 
             display: grid; 
-            grid-template-columns: 40px 1fr 80px 80px 140px; 
-            padding: 15px 20px; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+            grid-template-columns: 50px 1fr 100px 120px; 
+            padding: 18px 0; 
+            border-bottom: 1px solid rgba(46, 204, 113, 0.1); 
             align-items: center; 
+            transition: 0.3s;
         }
+        .file-item:hover { background: rgba(46, 204, 113, 0.05); }
 
-        .file-icon { font-size: 1.2rem; color: #2ecc71; }
-        .file-name { color: #fff; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
-        .file-size, .file-time { color: #888; font-size: 0.8rem; }
+        .file-name { color: #fff; text-decoration: none; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-size { color: #2ecc71; font-size: 0.85rem; opacity: 0.7; }
         
-        .file-op { display: flex; flex-direction: column; gap: 4px; }
-        .btn-download { background: #2ecc71; color: #000 !important; padding: 8px 0; border-radius: 6px; text-align: center; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
-        .btn-origin { color: #555; font-size: 0.7rem; text-align: center; text-decoration: none; }
-        
-        .loading { padding: 60px; text-align: center; color: #2ecc71; }
+        .btn-download { 
+            border: 1px solid #2ecc71;
+            color: #2ecc71 !important;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8rem;
+            text-decoration: none;
+            background: rgba(46, 204, 113, 0.1);
+        }
+        .btn-download:hover { background: #2ecc71; color: #000 !important; box-shadow: 0 0 15px #2ecc71; }
 
-        /* 爱心特效样式 */
-        .heart {
+        /* 爱心特效核心样式 */
+        .heart-effect {
             position: fixed;
             pointer-events: none;
+            z-index: 99999;
             user-select: none;
-            z-index: 9999;
-            animation: heart-float 1.2s ease-out forwards;
+            font-size: 20px;
+            transform: translate(-50%, -50%);
+            animation: heart-move 1s ease-out forwards;
         }
-        @keyframes heart-float {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); }
+
+        @keyframes heart-move {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
         }
 
         @media (max-width: 600px) {
             .list-header { display: none; }
-            .file-item { grid-template-columns: 40px 1fr 100px; padding: 15px; }
+            .file-item { grid-template-columns: 40px 1fr 90px; }
             .hide-mob { display: none; }
-            .mobile-info { font-size: 0.75rem; color: #777; margin-top: 3px; }
         }
     </style>
 </head>
@@ -120,89 +112,87 @@
         <header>
             <div class="logo">
                 <i class="fab fa-android"></i>
-                <h1>hex 小站</h1>
+                <h1>HEX_FILES_ROOT</h1>
                 <div class="site-stats">
-                    <div class="stat-item">已运行: <span id="runtime" class="val">-</span></div>
-                    <div class="stat-item">响应: <span id="speed" class="speed-val">-</span></div>
+                    <div>Uptime: <span id="runtime" class="val">-</span></div>
+                    <div>Ping: <span id="speed" class="val">-</span></div>
                 </div>
             </div>
         </header>
+
         <div class="main-content">
-            <div class="file-list">
-                <div id="file-container">
-                    <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> 系统初始化中...</div>
-                </div>
+            <div id="file-container">
+                <div class="loading">CONNECTING_TO_MAINFRAME...</div>
             </div>
         </div>
     </div>
 
 <script>
-/* --- Matrix Background --- */
+/* 1. 矩阵背景逻辑 */
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
-let width = canvas.width = window.innerWidth;
-let height = canvas.height = window.innerHeight;
-const letters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let w, h, columns, drops;
 const fontSize = 16;
-const columns = Math.floor(width / fontSize);
-const drops = Array(columns).fill(1);
+const letters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*";
 
-function drawMatrix() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
-    ctx.fillRect(0, 0, width, height);
+function initCanvas() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    columns = Math.floor(w / fontSize);
+    drops = Array(columns).fill(1);
+}
+
+function draw() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+    ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#0F0";
     ctx.font = fontSize + "px monospace";
     for (let i = 0; i < drops.length; i++) {
         const text = letters[Math.floor(Math.random() * letters.length)];
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
+        if (drops[i] * fontSize > h && Math.random() > 0.98) drops[i] = 0;
         drops[i]++;
     }
 }
-setInterval(drawMatrix, 35);
-window.addEventListener('resize', () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-});
+initCanvas();
+window.addEventListener('resize', initCanvas);
+setInterval(draw, 35);
 
-/* --- Click Heart Effect --- */
-window.addEventListener('click', (e) => {
-    createHeart(e.clientX, e.clientY);
-});
-
-function createHeart(x, y) {
+/* 2. 点击爱心特效 (修复版) */
+document.addEventListener('mousedown', (e) => {
     const heart = document.createElement('div');
-    heart.className = 'heart';
-    heart.innerHTML = '<i class="fas fa-heart"></i>';
-    // 随机颜色 (红、粉、浅绿)
-    const colors = ['#e74c3c', '#ff69b4', '#2ecc71', '#f1c40f'];
+    heart.className = 'heart-effect';
+    // 设置随机颜色
+    const colors = ['#ff4d4d', '#ff0080', '#2ecc71', '#f1c40f', '#00d2ff'];
     heart.style.color = colors[Math.floor(Math.random() * colors.length)];
-    heart.style.fontSize = (Math.random() * 10 + 15) + 'px';
-    heart.style.left = x + 'px';
-    heart.style.top = y + 'px';
+    // 使用 FontAwesome，如果没加载出来会显示文字心
+    heart.innerHTML = '<i class="fas fa-heart"></i>'; 
+    
+    heart.style.left = e.clientX + 'px';
+    heart.style.top = e.clientY + 'px';
     document.body.appendChild(heart);
     
-    // 动画结束后移除元素
-    setTimeout(() => { heart.remove(); }, 1200);
-}
+    // 1秒后移除
+    setTimeout(() => { heart.remove(); }, 1000);
+});
 
-/* --- Original Data Logic --- */
+/* 3. 建站时间与数据加载 */
 const startMark = performance.now();
 const CONFIG = {
     proxy: 'https://ghproxy.net/',
-    createDate: '2025-01-23T00:00:00'
+    createDate: '2025-12-23T00:00:00'
 };
 
-function showRuntime() {
+function updateRuntime() {
     const diff = new Date().getTime() - new Date(CONFIG.createDate).getTime();
-    if(diff < 0) return;
+    if(diff < 0) { document.getElementById('runtime').innerText = "BOOTING..."; return; }
     const d = Math.floor(diff / 86400000);
     const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('runtime').innerText = `${d}天${h}时${m}分${s}秒`;
+    document.getElementById('runtime').innerText = `${d}d ${h}h ${m}m ${s}s`;
 }
-setInterval(showRuntime, 1000);
+setInterval(updateRuntime, 1000);
 
 async function loadData() {
     const container = document.getElementById('file-container');
@@ -213,40 +203,27 @@ async function loadData() {
         let assets = release.assets || [];
 
         if (assets.length === 0) {
-            container.innerHTML = '<div class="loading">暂无文件</div>';
+            container.innerHTML = '<div>NO_DATA_AVAILABLE</div>';
             return;
         }
 
         assets.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-        container.innerHTML = `
-            <div class="list-header">
-                <div></div><div>文件名</div><div class="hide-mob">大小</div><div class="hide-mob">发布日期</div><div>下载</div>
-            </div>`;
+        container.innerHTML = `<div class="list-header"><div>TYPE</div><div>FILENAME</div><div class="hide-mob">SIZE</div><div>ACTION</div></div>`;
         
         assets.forEach(asset => {
             const size = (asset.size / 1048576).toFixed(1) + 'MB';
-            const date = asset.updated_at.substring(5, 10);
             const fastUrl = CONFIG.proxy + asset.browser_download_url;
-
             container.insertAdjacentHTML('beforeend', `
                 <div class="file-item">
                     <div class="file-icon"><i class="fab fa-android"></i></div>
-                    <div>
-                        <a href="${fastUrl}" class="file-name">${asset.name}</a>
-                        <div class="mobile-info hide-pc">${size} | ${date}</div>
-                    </div>
+                    <a href="${fastUrl}" class="file-name">${asset.name}</a>
                     <div class="file-size hide-mob">${size}</div>
-                    <div class="file-time hide-mob">${date}</div>
-                    <div class="file-op">
-                        <a href="${fastUrl}" class="btn-download">极速下载</a>
-                        <a href="${asset.browser_download_url}" class="btn-origin" target="_blank">备用原链</a>
-                    </div>
+                    <div class="file-op"><a href="${fastUrl}" class="btn-download">GET_FILE</a></div>
                 </div>`);
         });
-
         document.getElementById('speed').innerText = (performance.now() - startMark).toFixed(0) + 'ms';
     } catch (e) {
-        container.innerHTML = '<div class="loading" style="color:#e74c3c;">数据加载失败</div>';
+        container.innerHTML = '<div style="color:#ff4d4d;">CONNECTION_ERROR: DATA_MISSING</div>';
     }
 }
 loadData();
