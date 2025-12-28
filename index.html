@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>hex 小站 - Matrix Terminal</title>
+    <title>hex 小站 - Matrix Station</title>
     <link rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -17,29 +17,22 @@
             min-height: 100vh;
         }
 
-        /* 矩阵背景 */
+        /* 矩阵数字雨背景 */
         #matrix-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: -1; /* 必须在最底层 */
+            z-index: -1;
         }
 
-        /* 内容容器 */
         .container { 
             position: relative;
             max-width: 900px; 
             margin: 0 auto; 
             padding: 30px 15px; 
             z-index: 10;
-            /* 关键：允许点击事件穿透到 body，但保留子元素的交互 */
-            pointer-events: none; 
-        }
-
-        header, .main-content, .file-item, a, button { 
-            pointer-events: auto; /* 恢复子元素的交互能力 */
         }
 
         header { background: transparent; margin-bottom: 40px; text-align: left; }
@@ -48,6 +41,7 @@
         .site-stats { font-size: 0.85rem; color: #2ecc71; display: flex; gap: 20px; opacity: 0.8; }
         .val { color: #fff; }
 
+        /* 列表样式：无背景无格子 */
         .list-header { 
             display: grid; 
             grid-template-columns: 50px 1fr 100px 120px; 
@@ -55,6 +49,7 @@
             color: rgba(46, 204, 113, 0.5); 
             font-size: 0.8rem;
             border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+            margin-bottom: 10px;
         }
 
         .file-item { 
@@ -63,45 +58,43 @@
             padding: 18px 0; 
             border-bottom: 1px solid rgba(46, 204, 113, 0.1); 
             align-items: center; 
-            transition: 0.3s;
+            transition: all 0.3s;
         }
-        .file-item:hover { background: rgba(46, 204, 113, 0.05); }
+        
+        .file-item:hover {
+            background: rgba(46, 204, 113, 0.08);
+            padding-left: 8px;
+        }
 
-        .file-name { color: #fff; text-decoration: none; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-icon { font-size: 1.4rem; color: #2ecc71; }
+        .file-name { color: #fff; text-decoration: none; font-weight: bold; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .file-size { color: #2ecc71; font-size: 0.85rem; opacity: 0.7; }
         
+        /* 下载按钮样式 */
         .btn-download { 
             border: 1px solid #2ecc71;
             color: #2ecc71 !important;
-            padding: 6px 12px;
+            padding: 6px 0;
             border-radius: 4px;
             text-align: center;
             font-size: 0.8rem;
             text-decoration: none;
             background: rgba(46, 204, 113, 0.1);
+            transition: all 0.3s;
         }
-        .btn-download:hover { background: #2ecc71; color: #000 !important; box-shadow: 0 0 15px #2ecc71; }
-
-        /* 爱心特效核心样式 */
-        .heart-effect {
-            position: fixed;
-            pointer-events: none;
-            z-index: 99999;
-            user-select: none;
-            font-size: 20px;
-            transform: translate(-50%, -50%);
-            animation: heart-move 1s ease-out forwards;
+        .btn-download:hover {
+            background: #2ecc71;
+            color: #000 !important;
+            box-shadow: 0 0 15px #2ecc71;
         }
 
-        @keyframes heart-move {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-            100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
-        }
+        .loading { padding: 100px 0; text-align: center; color: #2ecc71; }
 
         @media (max-width: 600px) {
             .list-header { display: none; }
             .file-item { grid-template-columns: 40px 1fr 90px; }
             .hide-mob { display: none; }
+            .file-name { font-size: 0.95rem; }
         }
     </style>
 </head>
@@ -112,87 +105,64 @@
         <header>
             <div class="logo">
                 <i class="fab fa-android"></i>
-                <h1>HEX_FILES_ROOT</h1>
+                <h1>HEX_SYSTEM_STATION</h1>
                 <div class="site-stats">
-                    <div>Uptime: <span id="runtime" class="val">-</span></div>
-                    <div>Ping: <span id="speed" class="val">-</span></div>
+                    <div>运行时间: <span id="runtime" class="val">-</span></div>
+                    <div>响应速度: <span id="speed" class="val">-</span></div>
                 </div>
             </div>
         </header>
 
         <div class="main-content">
             <div id="file-container">
-                <div class="loading">CONNECTING_TO_MAINFRAME...</div>
+                <div class="loading">正在接入核心数据库...</div>
             </div>
         </div>
     </div>
 
 <script>
-/* 1. 矩阵背景逻辑 */
+/* --- Matrix Background --- */
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
-let w, h, columns, drops;
-const fontSize = 16;
-const letters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*";
+let width = canvas.width = window.innerWidth, height = canvas.height = window.innerHeight;
+const letters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%", fontSize = 16;
+const columns = Math.floor(width / fontSize), drops = Array(columns).fill(1);
 
-function initCanvas() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    columns = Math.floor(w / fontSize);
-    drops = Array(columns).fill(1);
-}
-
-function draw() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#0F0";
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.08)"; 
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#0F0"; 
     ctx.font = fontSize + "px monospace";
     for (let i = 0; i < drops.length; i++) {
         const text = letters[Math.floor(Math.random() * letters.length)];
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > h && Math.random() > 0.98) drops[i] = 0;
+        if (drops[i] * fontSize > height && Math.random() > 0.98) drops[i] = 0;
         drops[i]++;
     }
 }
-initCanvas();
-window.addEventListener('resize', initCanvas);
-setInterval(draw, 35);
-
-/* 2. 点击爱心特效 (修复版) */
-document.addEventListener('mousedown', (e) => {
-    const heart = document.createElement('div');
-    heart.className = 'heart-effect';
-    // 设置随机颜色
-    const colors = ['#ff4d4d', '#ff0080', '#2ecc71', '#f1c40f', '#00d2ff'];
-    heart.style.color = colors[Math.floor(Math.random() * colors.length)];
-    // 使用 FontAwesome，如果没加载出来会显示文字心
-    heart.innerHTML = '<i class="fas fa-heart"></i>'; 
-    
-    heart.style.left = e.clientX + 'px';
-    heart.style.top = e.clientY + 'px';
-    document.body.appendChild(heart);
-    
-    // 1秒后移除
-    setTimeout(() => { heart.remove(); }, 1000);
+setInterval(drawMatrix, 35);
+window.addEventListener('resize', () => { 
+    width = canvas.width = window.innerWidth; 
+    height = canvas.height = window.innerHeight; 
 });
 
-/* 3. 建站时间与数据加载 */
+/* --- Data & Runtime Logic --- */
 const startMark = performance.now();
 const CONFIG = {
     proxy: 'https://ghproxy.net/',
-    createDate: '2025-12-23T00:00:00'
+    createDate: '2025-12-23T00:00:00' // 建站日期
 };
 
-function updateRuntime() {
+function showRuntime() {
     const diff = new Date().getTime() - new Date(CONFIG.createDate).getTime();
-    if(diff < 0) { document.getElementById('runtime').innerText = "BOOTING..."; return; }
+    if(diff < 0) { document.getElementById('runtime').innerText = "系统初始化中"; return; }
     const d = Math.floor(diff / 86400000);
     const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('runtime').innerText = `${d}d ${h}h ${m}m ${s}s`;
+    document.getElementById('runtime').innerText = `${d}天 ${h}时 ${m}分 ${s}秒`;
 }
-setInterval(updateRuntime, 1000);
+setInterval(showRuntime, 1000);
 
 async function loadData() {
     const container = document.getElementById('file-container');
@@ -203,12 +173,15 @@ async function loadData() {
         let assets = release.assets || [];
 
         if (assets.length === 0) {
-            container.innerHTML = '<div>NO_DATA_AVAILABLE</div>';
+            container.innerHTML = '<div class="loading">暂无可用数据</div>';
             return;
         }
 
         assets.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-        container.innerHTML = `<div class="list-header"><div>TYPE</div><div>FILENAME</div><div class="hide-mob">SIZE</div><div>ACTION</div></div>`;
+        container.innerHTML = `
+            <div class="list-header">
+                <div>类型</div><div>文件名</div><div class="hide-mob">大小</div><div>操作</div>
+            </div>`;
         
         assets.forEach(asset => {
             const size = (asset.size / 1048576).toFixed(1) + 'MB';
@@ -218,12 +191,15 @@ async function loadData() {
                     <div class="file-icon"><i class="fab fa-android"></i></div>
                     <a href="${fastUrl}" class="file-name">${asset.name}</a>
                     <div class="file-size hide-mob">${size}</div>
-                    <div class="file-op"><a href="${fastUrl}" class="btn-download">GET_FILE</a></div>
+                    <div class="file-op">
+                        <a href="${fastUrl}" class="btn-download">极速下载</a>
+                    </div>
                 </div>`);
         });
+
         document.getElementById('speed').innerText = (performance.now() - startMark).toFixed(0) + 'ms';
     } catch (e) {
-        container.innerHTML = '<div style="color:#ff4d4d;">CONNECTION_ERROR: DATA_MISSING</div>';
+        container.innerHTML = '<div class="loading" style="color:#ff4d4d;">接入失败：请检查数据链路</div>';
     }
 }
 loadData();
