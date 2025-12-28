@@ -37,7 +37,6 @@
         .logo i { font-size: 2.5rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
         .logo h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 10px 0; text-shadow: 0 0 10px #2ecc71; }
         
-        /* 统计栏排版优化 */
         .site-stats { 
             font-size: 0.85rem; 
             color: rgba(46, 204, 113, 0.7); 
@@ -48,11 +47,10 @@
         }
         .val { color: #fff; font-weight: bold; margin-left: 4px; }
 
-        /* 列表区域优化 */
+        /* --- 列表区域：已取消外框和背景 --- */
         #file-container {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(46, 204, 113, 0.2);
-            border-radius: 4px;
+            background: transparent;
+            border: none;
         }
 
         .list-header { 
@@ -169,14 +167,13 @@ const CONFIG = {
     createDate: '2025-12-23T00:00:00'
 };
 
-// 仅计算天数
 function showRuntime() {
     const diff = new Date().getTime() - new Date(CONFIG.createDate).getTime();
     if(diff < 0) { document.getElementById('runtime').innerText = "系统初始化中"; return; }
     const days = Math.floor(diff / (24 * 3600 * 1000));
     document.getElementById('runtime').innerText = days + " 天";
 }
-showRuntime(); // 初始化显示
+showRuntime();
 
 async function loadData() {
     const container = document.getElementById('file-container');
