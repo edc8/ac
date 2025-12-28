@@ -29,93 +29,97 @@
             position: relative;
             max-width: 900px; 
             margin: 0 auto; 
-            padding: 40px 15px; 
+            padding: 40px 10px; 
             z-index: 10;
         }
 
-        header { margin-bottom: 40px; }
-        .logo i { font-size: 2.5rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
-        .logo h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 10px 0; text-shadow: 0 0 10px #2ecc71; }
+        header { margin-bottom: 30px; }
+        .logo i { font-size: 2.2rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
+        .logo h1 { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 8px 0; text-shadow: 0 0 10px #2ecc71; }
         
         .site-stats { 
-            font-size: 0.85rem; 
+            font-size: 0.75rem; 
             color: rgba(46, 204, 113, 0.7); 
             display: flex; 
-            gap: 25px; 
+            gap: 15px; 
             border-left: 2px solid #2ecc71;
-            padding-left: 12px;
+            padding-left: 10px;
         }
         .val { color: #fff; font-weight: bold; margin-left: 4px; }
 
-        /* --- 列表区域：彻底去除线条和背景 --- */
+        /* --- 列表布局优化 --- */
         #file-container {
             background: transparent;
             border: none;
         }
 
-        .list-header { 
+        /* 统一桌面和手机的列比例：类型(40px) 文件名(1fr) 大小(70px) 操作(80px) */
+        .list-header, .file-item { 
             display: grid; 
-            grid-template-columns: 50px 1fr 100px 120px; 
-            padding: 12px 15px; 
-            color: rgba(46, 204, 113, 0.4); /* 调暗表头，突出文件内容 */
-            font-size: 0.8rem;
-            border-bottom: none; /* 移除表头横线 */
-            background: transparent; /* 移除表头背景 */
+            grid-template-columns: 45px 1fr 75px 85px; 
+            align-items: center;
+            gap: 5px;
+        }
+
+        .list-header { 
+            padding: 10px 5px; 
+            color: rgba(46, 204, 113, 0.5); 
+            font-size: 0.75rem;
+            border-bottom: none;
+            background: rgba(46, 204, 113, 0.05); /* 淡淡的底色区分表头 */
         }
 
         .file-item { 
-            display: grid; 
-            grid-template-columns: 50px 1fr 100px 120px; 
-            padding: 18px 15px; 
-            border-bottom: none; /* 移除条目间的横线 */
-            align-items: center; 
+            padding: 15px 5px; 
             transition: all 0.3s;
         }
         
         .file-item:hover {
-            background: rgba(46, 204, 113, 0.15); /* 悬停时仅显示淡淡的色块 */
-            border-radius: 4px;
+            background: rgba(46, 204, 113, 0.12);
         }
 
-        .file-icon { font-size: 1.3rem; color: #2ecc71; opacity: 0.9; }
+        .file-icon { text-align: center; font-size: 1.1rem; color: #2ecc71; }
+        
         .file-name { 
             color: #fff; 
             text-decoration: none; 
             font-weight: bold; 
-            font-size: 1rem; 
+            font-size: 0.9rem; 
             overflow: hidden; 
             text-overflow: ellipsis; 
             white-space: nowrap;
-            /* 为文字添加微弱发光，增强在动态背景下的可读性 */
-            text-shadow: 0 0 5px rgba(46, 204, 113, 0.5); 
+            text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
         }
-        .file-size { color: #2ecc71; font-size: 0.85rem; opacity: 0.7; }
+
+        .file-size { 
+            color: #2ecc71; 
+            font-size: 0.75rem; 
+            opacity: 0.8; 
+            text-align: center;
+        }
         
         .btn-download { 
             border: 1px solid #2ecc71;
             color: #2ecc71 !important;
-            padding: 6px 0;
-            border-radius: 4px;
+            padding: 5px 0;
+            border-radius: 3px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             text-decoration: none;
-            background: rgba(46, 204, 113, 0.05);
-            transition: all 0.3s;
-        }
-        .btn-download:hover {
-            background: #2ecc71;
-            color: #000 !important;
-            box-shadow: 0 0 15px #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
         }
 
-        .loading { padding: 80px 0; text-align: center; color: #2ecc71; letter-spacing: 1px; }
+        .loading { padding: 60px 0; text-align: center; color: #2ecc71; font-size: 0.9rem; }
 
+        /* 手机端细节微调 */
         @media (max-width: 600px) {
-            .list-header { display: none; }
-            .file-item { grid-template-columns: 40px 1fr 90px; padding: 15px 10px; }
-            .hide-mob { display: none; }
-            .file-name { font-size: 0.95rem; }
-            .site-stats { gap: 15px; font-size: 0.75rem; }
+            .container { padding: 20px 8px; }
+            .list-header, .file-item { 
+                grid-template-columns: 35px 1fr 65px 75px; /* 进一步压缩列宽 */
+                font-size: 0.8rem;
+            }
+            .file-name { font-size: 0.85rem; }
+            .btn-download { font-size: 0.65rem; }
         }
     </style>
 </head>
@@ -195,7 +199,10 @@ async function loadData() {
         
         let html = `
             <div class="list-header">
-                <div>类型</div><div>文件名</div><div class="hide-mob">大小</div><div>操作</div>
+                <div style="text-align:center">类型</div>
+                <div>文件名</div>
+                <div style="text-align:center">大小</div>
+                <div style="text-align:center">操作</div>
             </div>`;
         
         assets.forEach(asset => {
@@ -205,9 +212,9 @@ async function loadData() {
                 <div class="file-item">
                     <div class="file-icon"><i class="fab fa-android"></i></div>
                     <a href="${fastUrl}" class="file-name">${asset.name}</a>
-                    <div class="file-size hide-mob">${size}</div>
+                    <div class="file-size">${size}</div>
                     <div class="file-op">
-                        <a href="${fastUrl}" class="btn-download">极速下载</a>
+                        <a href="${fastUrl}" class="btn-download">下载</a>
                     </div>
                 </div>`;
         });
