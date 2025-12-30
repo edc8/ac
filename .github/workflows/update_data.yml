@@ -3,39 +3,56 @@ name: Update APK Data
 on:
   schedule:
     - cron: '0 * * * *' # 每小时自动更新一次
-  workflow_dispatch:      # 允许手动点击运行 (非常重要！)
+  workflow_dispatch:      # 允许手动运行
   release:
-    types: [published]    # 当你发布新 Release 时自动运行
+    types: [published]    # 发布新 Release 时运行
 
 jobs:
   update-json:
     runs-on: ubuntu-latest
-    # 必须显式声明写权限
     permissions:
       contents: write
       
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0 # 确保能顺利执行 push
+
       - name: Fetch Latest Release
         run: |
-          # 增加 User-Agent 确保请求成功
+          # 增加 User-Agent 并抓取最新数据
           curl -H "Accept: application/vnd.github.v3+json" \
                -H "User-Agent: GitHub-Actions" \
                -s https://api.github.com/repos/${{ github.repository }}/releases/latest > data.json
           
-          # 检查文件是否抓取成功
           if [ ! -s data.json ]; then
-            echo "错误：未能获取到 Release 数据，请检查仓库是否有已发布的 Release"
-            exit 1
+            echo "警告：未能获取到 Release 数据，可能是因为仓库还没有 Release。"
+            # 这里不退出的原因是让后续的保活逻辑有机会运行
           fi
 
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
           git add data.json
-          # 如果文件没有变化则跳过，防止报错
-          git commit -m "自动更新发布数据 (via Actions)" || exit 0
-          git push
+          
+          # 检查 data.json 是否有变化
+          if git diff --staged --quiet; then
+            # 如果没有内容变化，且是由定时任务触发的，则执行保活
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              echo "触发保活机制：更新 .keep-alive 文件"
+              date > .keep-alive
+              git add .keep-alive
+              git commit -m "chore: keep-alive (APK data) [skip ci]"
+              git push origin main
+            else
+              echo "无内容更新且非定时任务，跳过推送。"
+            fi
+          else
+            # 数据有变化，正常提交
+            git commit -m "自动更新发布数据 (via Actions) [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          fi
