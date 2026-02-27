@@ -6,39 +6,141 @@
     <title>hex 小站</title>
     <link rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* 基础样式复位 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #000; color: #2ecc71; font-family: "Consolas", "Courier New", monospace; line-height: 1.5; overflow-x: hidden; min-height: 100vh; }
-        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.8; }
-        .container { position: relative; max-width: 900px; margin: 0 auto; padding: 40px 15px; z-index: 10; }
-        header { margin-bottom: 35px; }
+        
+        body { 
+            background-color: #000; 
+            color: #2ecc71; 
+            font-family: "Consolas", "Courier New", monospace; 
+            line-height: 1.5; 
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 矩阵背景层 */
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .container { 
+            position: relative;
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 40px 15px; 
+            z-index: 10;
+        }
+
+        /* 头部设计 */
+        header { margin-bottom: 30px; }
         .logo i { font-size: 2.5rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
         .logo h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 10px 0; text-shadow: 0 0 10px #2ecc71; }
-        .site-stats { font-size: 0.85rem; color: rgba(46, 204, 113, 0.7); display: flex; gap: 25px; border-left: 2px solid #2ecc71; padding-left: 12px; }
-        .val { color: #fff; font-weight: bold; margin-left: 4px; }
         
-        #file-container { background: transparent; border: none; }
-        .list-header, .file-item { display: grid; grid-template-columns: 45px 1fr 85px 110px; align-items: center; gap: 5px; }
-        .list-header { padding: 12px 10px; color: rgba(46, 204, 113, 0.5); font-size: 0.85rem; background: rgba(46, 204, 113, 0.05); letter-spacing: 1px; }
-        .file-item { padding: 18px 10px; transition: all 0.3; border-bottom: 1px solid rgba(46, 204, 113, 0.1); }
-        .file-item:hover { background: rgba(46, 204, 113, 0.12); border-radius: 6px; }
-        .file-icon { text-align: center; font-size: 1.2rem; color: #2ecc71; opacity: 0.8; }
-        .file-name { color: #fff; text-decoration: none; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 0 5px rgba(46, 204, 113, 0.3); }
-        .file-size { color: #2ecc71; font-size: 0.8rem; opacity: 0.8; text-align: center; }
-        .btn-download { display: block; border: 1px solid #2ecc71; color: #2ecc71 !important; padding: 6px 0; border-radius: 4px; text-align: center; font-size: 0.75rem; text-decoration: none; background: rgba(46, 204, 113, 0.1); transition: all 0.3; }
-        .btn-download:hover { background: #2ecc71; color: #000 !important; box-shadow: 0 0 15px #2ecc71; }
-        .loading { padding: 80px 0; text-align: center; color: #2ecc71; letter-spacing: 1px; }
+        .site-stats { 
+            font-size: 0.85rem; 
+            color: rgba(46, 204, 113, 0.7); 
+            display: flex; 
+            gap: 20px; 
+            border-left: 2px solid #2ecc71;
+            padding-left: 12px;
+            margin-bottom: 20px;
+        }
+        .val { color: #fff; font-weight: bold; margin-left: 4px; }
 
-        /* 节点切换样式 */
-        .node-selector { margin-bottom: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .node-selector select { background: #000; color: #2ecc71; border: 1px solid #2ecc71; padding: 3px 8px; border-radius: 4px; outline: none; cursor: pointer; }
+        /* 自动切换状态条 */
+        .node-info {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+        #current-node-tag { color: #fff; text-decoration: underline; }
 
+        /* 文件列表区域 */
+        .list-header, .file-item { 
+            display: grid; 
+            grid-template-columns: 45px 1fr 85px 110px; 
+            align-items: center;
+            gap: 10px;
+        }
+
+        .list-header { 
+            padding: 12px 10px; 
+            color: rgba(46, 204, 113, 0.5); 
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(46, 204, 113, 0.2);
+        }
+
+        .file-item { 
+            padding: 18px 10px; 
+            border-bottom: 1px solid rgba(46, 204, 113, 0.05);
+            transition: all 0.3 cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .file-item:hover {
+            background: rgba(46, 204, 113, 0.12);
+            transform: translateX(5px);
+        }
+
+        .file-icon { text-align: center; font-size: 1.2rem; color: #2ecc71; }
+        
+        .file-name { 
+            color: #fff; 
+            font-weight: bold; 
+            font-size: 0.95rem; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap;
+        }
+
+        .file-size { 
+            color: #2ecc71; 
+            font-size: 0.8rem; 
+            opacity: 0.8; 
+            text-align: center;
+        }
+        
+        .btn-download { 
+            display: block;
+            border: 1px solid #2ecc71;
+            color: #2ecc71 !important;
+            padding: 7px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.75rem;
+            text-decoration: none;
+            background: rgba(46, 204, 113, 0.05);
+            transition: all 0.3;
+        }
+
+        .btn-download:hover {
+            background: #2ecc71;
+            color: #000 !important;
+            box-shadow: 0 0 15px #2ecc71;
+        }
+
+        .loading { padding: 60px 0; text-align: center; color: #2ecc71; }
+
+        /* 移动端适配 */
         @media (max-width: 600px) {
-            .container { padding: 25px 10px; }
-            .list-header, .file-item { grid-template-columns: 35px 1fr 70px 90px; gap: 5px; }
-            .file-icon { font-size: 1rem; }
+            .container { padding: 20px 10px; }
+            .list-header, .file-item { 
+                grid-template-columns: 35px 1fr 70px 90px; 
+                gap: 5px;
+            }
             .file-name { font-size: 0.85rem; }
-            .file-size { font-size: 0.7rem; }
-            .btn-download { font-size: 0.7rem; padding: 5px 0; }
+            .node-info { flex-direction: column; align-items: flex-start; gap: 8px; }
         }
     </style>
 </head>
@@ -52,21 +154,14 @@
                 <h1>hex 小站</h1>
                 <div class="site-stats">
                     <div>运行时长: <span id="runtime" class="val">-</span></div>
-                    <div>数据延迟: <span id="speed" class="val">-</span></div>
+                    <div>系统响应: <span id="speed" class="val">-</span></div>
                 </div>
             </div>
         </header>
 
-        <div class="node-selector">
-            <span><i class="fas fa-network-wired"></i> 加速节点:</span>
-            <select id="proxy-select" onchange="loadData()">
-                <option value="https://ghfast.top/">节点 A (推荐)</option>
-                <option value="https://ghproxy.cn/">节点 B (备用)</option>
-                <option value="https://mirror.ghproxy.com/">节点 C (官方镜像)</option>
-                <option value="https://kkgithub.com/">节点 D (镜像站)</option>
-                <option value="">直连 (需梯子)</option>
-            </select>
-            <span style="font-size: 0.7rem; opacity: 0.6;">*若下载失败请切换节点</span>
+        <div class="node-info">
+            <span><i class="fas fa-microchip"></i> 链路状态: <span id="node-status">正在探测最优路径...</span></span>
+            <span>当前节点: <span id="current-node-tag">自动匹配中</span></span>
         </div>
 
         <div class="main-content">
@@ -77,73 +172,107 @@
     </div>
 
 <script>
-/* --- Matrix Background --- */
+/* --- Matrix Background (矩阵下雨) --- */
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
 let width = canvas.width = window.innerWidth, height = canvas.height = window.innerHeight;
-const letters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ", fontSize = 16;
+const letters = "01", fontSize = 16;
 const columns = Math.floor(width / fontSize), drops = Array(columns).fill(1);
 
 function drawMatrix() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.08)"; 
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; 
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = "#0F0"; 
     ctx.font = fontSize + "px monospace";
     for (let i = 0; i < drops.length; i++) {
         const text = letters[Math.floor(Math.random() * letters.length)];
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > height && Math.random() > 0.98) drops[i] = 0;
+        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
     }
 }
-setInterval(drawMatrix, 35);
+setInterval(drawMatrix, 50);
 
-/* --- Logic --- */
+/* --- 自动切换核心逻辑 --- */
 const startMark = performance.now();
 const CREATE_DATE = '2025-12-23T00:00:00';
+const PROXY_NODES = [
+    { name: '高速节点 A', url: 'https://ghfast.top/' },
+    { name: '阿里云镜像', url: 'https://ghproxy.cn/' },
+    { name: '官方镜像', url: 'https://mirror.ghproxy.com/' },
+    { name: '备用链路', url: 'https://kkgithub.com/' }
+];
 
+// 计算运行时间
 function showRuntime() {
     const diff = new Date().getTime() - new Date(CREATE_DATE).getTime();
-    const days = Math.floor(diff / (24 * 3600 * 1000));
-    document.getElementById('runtime').innerText = (days < 0 ? 0 : days) + " 天";
+    const days = Math.max(0, Math.floor(diff / (24 * 3600 * 1000)));
+    document.getElementById('runtime').innerText = days + " 天";
 }
 showRuntime();
 
+// 全自动测速并获取最优节点
+async function getBestNode() {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5秒超时检测
+
+    const promises = PROXY_NODES.map(async (node) => {
+        const start = performance.now();
+        try {
+            // 通过获取极其微小的资源来测试延迟
+            const response = await fetch(node.url + 'favicon.ico', { 
+                mode: 'no-cors', 
+                signal: controller.signal 
+            });
+            return { ...node, time: performance.now() - start };
+        } catch (e) {
+            return { ...node, time: 99999 };
+        }
+    });
+
+    const results = await Promise.all(promises);
+    clearTimeout(timeoutId);
+    
+    // 过滤掉完全不通的，按延迟排序
+    const sorted = results.sort((a, b) => a.time - b.time);
+    return sorted[0]; // 返回最快的节点对象
+}
+
 async function loadData() {
     const container = document.getElementById('file-container');
-    const proxyPrefix = document.getElementById('proxy-select').value;
-    
-    // 显示加载状态
-    container.innerHTML = '<div class="loading">正在重组数据链路...</div>';
+    const nodeStatus = document.getElementById('node-status');
+    const nodeTag = document.getElementById('current-node-tag');
 
     try {
-        // 这里的 data.json 建议放在同级目录
+        // 1. 寻找最优节点
+        const bestNode = await getBestNode();
+        nodeStatus.innerText = "已锁定最佳路径";
+        nodeTag.innerText = bestNode.name;
+
+        // 2. 加载数据
         const res = await fetch(`./data.json?v=${Date.now()}`);
-        if (!res.ok) throw new Error('Data Link Error');
-        
+        if (!res.ok) throw new Error('Data load failed');
         const data = await res.json();
         const release = Array.isArray(data) ? data[0] : data;
         let assets = release.assets || [];
 
         if (assets.length === 0) {
-            container.innerHTML = '<div class="loading">数据库内无可用资产</div>';
+            container.innerHTML = '<div class="loading">暂无数据</div>';
             return;
         }
 
-        assets.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-        
+        // 3. 渲染列表
         let html = `
             <div class="list-header">
-                <div></div> <div>文件名</div>
+                <div></div><div>文件名</div>
                 <div style="text-align:center">大小</div>
                 <div style="text-align:center">操作</div>
             </div>`;
         
         assets.forEach(asset => {
             const size = (asset.size / 1048576).toFixed(1) + 'MB';
-            // 关键修复：清洗URL并拼接
-            const rawUrl = asset.browser_download_url.trim();
-            const fastUrl = proxyPrefix + rawUrl;
+            const cleanDownloadUrl = asset.browser_download_url.trim();
+            const fastUrl = bestNode.url + cleanDownloadUrl;
 
             html += `
                 <div class="file-item">
@@ -158,9 +287,10 @@ async function loadData() {
 
         container.innerHTML = html;
         document.getElementById('speed').innerText = (performance.now() - startMark).toFixed(0) + 'ms';
+        
     } catch (e) {
-        console.error(e);
-        container.innerHTML = '<div class="loading" style="color:#ff4d4d;">接入失败：核心数据文件 (data.json) 丢失或格式错误</div>';
+        container.innerHTML = '<div class="loading" style="color:#ff4d4d;">[ERROR] 数据库接入断开，请检查 data.json</div>';
+        nodeStatus.innerText = "链路中断";
     }
 }
 
@@ -173,4 +303,3 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
-
