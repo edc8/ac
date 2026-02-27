@@ -3,128 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>hex 小站</title>
+    <title>hex 小站 - 核心镜像</title>
     <link rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background-color: #000; 
-            color: #2ecc71; 
-            font-family: "Consolas", "Courier New", monospace; 
-            line-height: 1.5; 
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        #matrix-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -1;
-            opacity: 0.8;
-        }
-
-        .container { 
-            position: relative;
-            max-width: 900px; 
-            margin: 0 auto; 
-            padding: 40px 15px; 
-            z-index: 10;
-        }
-
+        body { background-color: #000; color: #2ecc71; font-family: "Consolas", "Courier New", monospace; line-height: 1.5; overflow-x: hidden; min-height: 100vh; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.8; }
+        .container { position: relative; max-width: 900px; margin: 0 auto; padding: 40px 15px; z-index: 10; }
         header { margin-bottom: 35px; }
         .logo i { font-size: 2.5rem; color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
         .logo h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 10px 0; text-shadow: 0 0 10px #2ecc71; }
-        
-        .site-stats { 
-            font-size: 0.85rem; 
-            color: rgba(46, 204, 113, 0.7); 
-            display: flex; 
-            gap: 25px; 
-            border-left: 2px solid #2ecc71;
-            padding-left: 12px;
-        }
+        .site-stats { font-size: 0.85rem; color: rgba(46, 204, 113, 0.7); display: flex; gap: 25px; border-left: 2px solid #2ecc71; padding-left: 12px; }
         .val { color: #fff; font-weight: bold; margin-left: 4px; }
-
-        /* --- 列表区域：保留图标，取消表头文字 --- */
-        #file-container {
-            background: transparent;
-            border: none;
-        }
-
-        /* 布局比例：图标(45px) | 文件名(自动) | 大小(85px) | 操作(110px) */
-        .list-header, .file-item { 
-            display: grid; 
-            grid-template-columns: 45px 1fr 85px 110px; 
-            align-items: center;
-            gap: 5px;
-        }
-
-        .list-header { 
-            padding: 12px 10px; 
-            color: rgba(46, 204, 113, 0.5); 
-            font-size: 0.85rem;
-            background: rgba(46, 204, 113, 0.05);
-            letter-spacing: 1px;
-        }
-
-        .file-item { 
-            padding: 18px 10px; 
-            transition: all 0.3s;
-        }
         
-        .file-item:hover {
-            background: rgba(46, 204, 113, 0.12);
-            border-radius: 6px;
-        }
-
+        #file-container { background: transparent; border: none; }
+        .list-header, .file-item { display: grid; grid-template-columns: 45px 1fr 85px 110px; align-items: center; gap: 5px; }
+        .list-header { padding: 12px 10px; color: rgba(46, 204, 113, 0.5); font-size: 0.85rem; background: rgba(46, 204, 113, 0.05); letter-spacing: 1px; }
+        .file-item { padding: 18px 10px; transition: all 0.3s; border-bottom: 1px solid rgba(46, 204, 113, 0.1); }
+        .file-item:hover { background: rgba(46, 204, 113, 0.12); border-radius: 6px; }
         .file-icon { text-align: center; font-size: 1.2rem; color: #2ecc71; opacity: 0.8; }
-        
-        .file-name { 
-            color: #fff; 
-            text-decoration: none; 
-            font-weight: bold; 
-            font-size: 0.95rem; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap;
-            text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
-        }
-
-        .file-size { 
-            color: #2ecc71; 
-            font-size: 0.8rem; 
-            opacity: 0.8; 
-            text-align: center;
-        }
-        
-        .btn-download { 
-            display: block;
-            border: 1px solid #2ecc71;
-            color: #2ecc71 !important;
-            padding: 6px 0;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.75rem;
-            text-decoration: none;
-            background: rgba(46, 204, 113, 0.1);
-            transition: all 0.3s;
-        }
-        .btn-download:hover {
-            background: #2ecc71;
-            color: #000 !important;
-            box-shadow: 0 0 15px #2ecc71;
-        }
-
+        .file-name { color: #fff; text-decoration: none; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 0 5px rgba(46, 204, 113, 0.3); }
+        .file-size { color: #2ecc71; font-size: 0.8rem; opacity: 0.8; text-align: center; }
+        .btn-download { display: block; border: 1px solid #2ecc71; color: #2ecc71 !important; padding: 6px 0; border-radius: 4px; text-align: center; font-size: 0.75rem; text-decoration: none; background: rgba(46, 204, 113, 0.1); transition: all 0.3s; }
+        .btn-download:hover { background: #2ecc71; color: #000 !important; box-shadow: 0 0 15px #2ecc71; }
         .loading { padding: 80px 0; text-align: center; color: #2ecc71; letter-spacing: 1px; }
+
+        /* 节点切换样式 */
+        .node-selector { margin-bottom: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .node-selector select { background: #000; color: #2ecc71; border: 1px solid #2ecc71; padding: 3px 8px; border-radius: 4px; outline: none; cursor: pointer; }
 
         @media (max-width: 600px) {
             .container { padding: 25px 10px; }
-            .list-header, .file-item { 
-                grid-template-columns: 35px 1fr 70px 90px; 
-                gap: 5px;
-            }
+            .list-header, .file-item { grid-template-columns: 35px 1fr 70px 90px; gap: 5px; }
             .file-icon { font-size: 1rem; }
             .file-name { font-size: 0.85rem; }
             .file-size { font-size: 0.7rem; }
@@ -141,11 +51,23 @@
                 <i class="fab fa-android"></i>
                 <h1>hex 小站</h1>
                 <div class="site-stats">
-                    <div>小破站已运行: <span id="runtime" class="val">-</span></div>
-                    <div>响应: <span id="speed" class="val">-</span></div>
+                    <div>运行时长: <span id="runtime" class="val">-</span></div>
+                    <div>数据延迟: <span id="speed" class="val">-</span></div>
                 </div>
             </div>
         </header>
+
+        <div class="node-selector">
+            <span><i class="fas fa-network-wired"></i> 加速节点:</span>
+            <select id="proxy-select" onchange="loadData()">
+                <option value="https://ghfast.top/">节点 A (推荐)</option>
+                <option value="https://ghproxy.cn/">节点 B (备用)</option>
+                <option value="https://mirror.ghproxy.com/">节点 C (官方镜像)</option>
+                <option value="https://kkgithub.com/">节点 D (镜像站)</option>
+                <option value="">直连 (需梯子)</option>
+            </select>
+            <span style="font-size: 0.7rem; opacity: 0.6;">*若下载失败请切换节点</span>
+        </div>
 
         <div class="main-content">
             <div id="file-container">
@@ -176,31 +98,35 @@ function drawMatrix() {
 }
 setInterval(drawMatrix, 35);
 
-/* --- Data & Runtime Logic --- */
+/* --- Logic --- */
 const startMark = performance.now();
-const CONFIG = {
-    proxy: 'https://ghproxy.net/',
-    createDate: '2025-12-23T00:00:00'
-};
+const CREATE_DATE = '2025-12-23T00:00:00';
 
 function showRuntime() {
-    const diff = new Date().getTime() - new Date(CONFIG.createDate).getTime();
-    if(diff < 0) { document.getElementById('runtime').innerText = "系统初始化中"; return; }
+    const diff = new Date().getTime() - new Date(CREATE_DATE).getTime();
     const days = Math.floor(diff / (24 * 3600 * 1000));
-    document.getElementById('runtime').innerText = days + " 天";
+    document.getElementById('runtime').innerText = (days < 0 ? 0 : days) + " 天";
 }
 showRuntime();
 
 async function loadData() {
     const container = document.getElementById('file-container');
+    const proxyPrefix = document.getElementById('proxy-select').value;
+    
+    // 显示加载状态
+    container.innerHTML = '<div class="loading">正在重组数据链路...</div>';
+
     try {
+        // 这里的 data.json 建议放在同级目录
         const res = await fetch(`./data.json?v=${Date.now()}`);
+        if (!res.ok) throw new Error('Data Link Error');
+        
         const data = await res.json();
         const release = Array.isArray(data) ? data[0] : data;
         let assets = release.assets || [];
 
         if (assets.length === 0) {
-            container.innerHTML = '<div class="loading">暂无可用数据</div>';
+            container.innerHTML = '<div class="loading">数据库内无可用资产</div>';
             return;
         }
 
@@ -215,14 +141,17 @@ async function loadData() {
         
         assets.forEach(asset => {
             const size = (asset.size / 1048576).toFixed(1) + 'MB';
-            const fastUrl = CONFIG.proxy + asset.browser_download_url;
+            // 关键修复：清洗URL并拼接
+            const rawUrl = asset.browser_download_url.trim();
+            const fastUrl = proxyPrefix + rawUrl;
+
             html += `
                 <div class="file-item">
                     <div class="file-icon"><i class="fab fa-android"></i></div>
-                    <a href="${fastUrl}" class="file-name">${asset.name}</a>
+                    <div class="file-name" title="${asset.name}">${asset.name}</div>
                     <div class="file-size">${size}</div>
                     <div class="file-op">
-                        <a href="${fastUrl}" class="btn-download">极速下载</a>
+                        <a href="${fastUrl}" target="_blank" class="btn-download">极速下载</a>
                     </div>
                 </div>`;
         });
@@ -230,9 +159,11 @@ async function loadData() {
         container.innerHTML = html;
         document.getElementById('speed').innerText = (performance.now() - startMark).toFixed(0) + 'ms';
     } catch (e) {
-        container.innerHTML = '<div class="loading" style="color:#ff4d4d;">接入失败：请检查数据链路</div>';
+        console.error(e);
+        container.innerHTML = '<div class="loading" style="color:#ff4d4d;">接入失败：核心数据文件 (data.json) 丢失或格式错误</div>';
     }
 }
+
 loadData();
 
 window.addEventListener('resize', () => { 
@@ -242,4 +173,3 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
-
