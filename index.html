@@ -1,80 +1,102 @@
-<script>
-    // 1. 配置信息
-    const OWNER = 'edc8';
-    const REPO = 'ac';
-    // 注意：如果是空仓库或没发布过 Release，这个接口会报 404
-    const API_URL = `https://api.github.com/repos/${OWNER}/${REPO}/releases/latest`;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AC 资源下载站</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .card { width: 100%; max-width: 600px; background: white; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { font-size: 20px; color: #1a1a1a; margin: 0 0 8px 0; text-align: center; }
+        .desc { font-size: 14px; color: #666; text-align: center; margin-bottom: 24px; }
+        #list { list-style: none; padding: 0; margin: 0; }
+        .item { display: flex; align-items: center; padding: 16px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; transition: all 0.2s; }
+        .item:hover { border-color: #007aff; background: #f9f9f9; }
+        .icon { width: 40px; height: 40px; background: #eef2ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 16px; font-weight: bold; color: #4f46e5; font-size: 12px; }
+        .info { flex: 1; }
+        .name { font-size: 15px; font-weight: 600; color: #333; text-decoration: none; display: block; margin-bottom: 4px; }
+        .meta { font-size: 12px; color: #999; }
+        .btn { padding: 6px 16px; background: #007aff; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; }
+        #status { text-align: center; padding: 40px; color: #666; font-size: 14px; }
+        .error-msg { color: #ff3b30; background: #fff2f1; padding: 12px; border-radius: 6px; border: 1px solid #ffccc7; font-size: 13px; }
+    </style>
+</head>
+<body>
 
-    // 2. 格式化文件大小
-    function formatBytes(bytes, decimals = 2) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+<div class="card">
+    <h1>AC 资源下载</h1>
+    <p class="desc">GitHub: edc8/ac 自动同步</p>
+    
+    <div id="status">正在探测最新版本...</div>
+    <ul id="list"></ul>
+</div>
+
+<script>
+    const CONFIG = {
+        owner: 'edc8',
+        repo: 'ac'
+    };
+
+    function formatSize(bytes) {
+        if (!bytes) return '未知大小';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let i = 0;
+        while (bytes >= 1024 && i < units.length - 1) {
+            bytes /= 1024;
+            i++;
+        }
+        return bytes.toFixed(1) + ' ' + units[i];
     }
 
-    // 3. 核心抓取逻辑
-    async function fetchReleases() {
-        const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
-        const list = document.getElementById('release-list');
+    async function init() {
+        const statusEl = document.getElementById('status');
+        const listEl = document.getElementById('list');
 
         try {
-            const response = await fetch(API_URL, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            // 如果状态码不是 200，说明有问题
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error("仓库还没有发布任何 Release 资源，请先去 GitHub 创建一个 Release。");
-                } else if (response.status === 403) {
-                    throw new Error("访问太频繁，被 GitHub 暂时限制了，请稍后再试。");
-                } else {
-                    throw new Error(`GitHub 返回了错误码: ${response.status}`);
-                }
+            // 1. 获取最新 Release
+            const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/releases/latest`);
+            
+            if (!res.ok) {
+                if (res.status === 404) throw new Error("未找到任何 Release，请确认仓库右侧已创建发布版本。");
+                if (res.status === 403) throw new Error("请求太快啦，被 GitHub 限制了，请 1 分钟后再试。");
+                throw new Error(`GitHub API 报错: ${res.status}`);
             }
 
-            const data = await response.json();
+            const data = await res.json();
             
-            // 检查是否有附件
             if (!data.assets || data.assets.length === 0) {
-                loading.innerText = `找到版本 ${data.tag_name}，但该版本没有上传任何文件。`;
+                statusEl.innerHTML = `<div class="error-msg">找到版本 ${data.tag_name}，但里面没有上传 APK 文件。</div>`;
                 return;
             }
 
-            loading.style.display = 'none';
+            // 2. 清除加载状态
+            statusEl.style.display = 'none';
 
-            // 渲染列表
-            data.assets.forEach(asset => {
-                const fileExt = asset.name.split('.').pop().toUpperCase();
+            // 3. 循环渲染文件
+            data.assets.forEach(file => {
+                const ext = file.name.split('.').pop().toLowerCase();
                 const li = document.createElement('li');
-                li.className = 'release-item';
+                li.className = 'item';
                 li.innerHTML = `
-                    <div class="file-info">
-                        <div class="file-icon">${fileExt}</div>
-                        <div>
-                            <a href="${asset.browser_download_url}" class="file-name" target="_blank">${asset.name}</a>
-                            <div class="meta-info">
-                                大小: ${formatBytes(asset.size)} | 下载次数: ${asset.download_count} | 更新于: ${new Date(asset.updated_at).toLocaleDateString()}
-                            </div>
-                        </div>
+                    <div class="icon">${ext === 'apk' ? 'APK' : 'FILE'}</div>
+                    <div class="info">
+                        <a class="name" href="${file.browser_download_url}">${file.name}</a>
+                        <div class="meta">${formatSize(file.size)} · ${new Date(file.updated_at).toLocaleDateString()} 更新</div>
                     </div>
-                    <a href="${asset.browser_download_url}" class="download-btn" target="_blank">立即下载</a>
+                    <a class="btn" href="${file.browser_download_url}">下载</a>
                 `;
-                list.appendChild(li);
+                listEl.appendChild(li);
             });
+
         } catch (err) {
             console.error(err);
-            loading.style.display = 'none';
-            error.style.display = 'block';
-            error.innerText = `加载失败：${err.message}`;
+            statusEl.innerHTML = `<div class="error-msg">⚠️ 加载失败<br>${err.message}</div>`;
         }
     }
 
-    window.onload = fetchReleases;
+    // 启动
+    init();
 </script>
+
+</body>
+</html>
